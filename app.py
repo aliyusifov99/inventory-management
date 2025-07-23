@@ -1,6 +1,6 @@
 # app.py
 import streamlit as st
-from config.settings import APP_TITLE, APP_ICON, PAGE_LAYOUT, IS_CLOUD_DEPLOYMENT
+from config.settings import APP_TITLE, APP_ICON, PAGE_LAYOUT, IS_CLOUD_DEPLOYMENT, DB_TYPE, GOOGLE_SHEETS_URL
 from config.database import init_database, test_connection
 from pages.add_product import show_add_product_page
 from pages.view_products import show_view_products_page
@@ -23,27 +23,38 @@ def main():
     # App header
     st.title(f"{APP_ICON} {APP_TITLE}")
     
-    # Show deployment status
-    if IS_CLOUD_DEPLOYMENT:
-        st.success("☁️ **Running on Streamlit Cloud** - Access from anywhere!")
-    else:
-        st.info("💻 **Local Development Mode**")
-    
-    # Show database status
-    db_status_container = st.container()
-    with db_status_container:
-        col1, col2 = st.columns([3, 1])
+    # Show deployment and database status
+    status_container = st.container()
+    with status_container:
+        col1, col2, col3 = st.columns([2, 1, 1])
+        
         with col1:
-            st.caption("🗄️ Database: SQLite (File-based)")
+            if IS_CLOUD_DEPLOYMENT:
+                if DB_TYPE == "sheets":
+                    st.success("☁️ **Streamlit Cloud** + 📊 **Google Sheets**")
+                else:
+                    st.success("☁️ **Streamlit Cloud** + 🗄️ **SQLite**")
+            else:
+                if DB_TYPE == "sheets":
+                    st.info("💻 **Local Development** + 📊 **Google Sheets**")
+                else:
+                    st.info("💻 **Local Development** + 🗄️ **SQLite**")
         
         with col2:
+            st.caption(f"Database: {DB_TYPE.upper()}")
+        
+        with col3:
             # Test connection
             if test_connection():
-                st.success("🟢 Ready")
+                st.success("🟢 Connected")
             else:
-                st.error("🔴 Error")
+                st.error("🔴 Failed")
                 if not IS_CLOUD_DEPLOYMENT:
                     st.stop()
+    
+    # Show Google Sheets link if using sheets
+    if DB_TYPE == "sheets" and GOOGLE_SHEETS_URL:
+        st.info(f"📊 **Database**: [View Google Sheet]({GOOGLE_SHEETS_URL})")
     
     st.markdown("---")  # Separator
     
