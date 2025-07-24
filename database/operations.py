@@ -188,13 +188,12 @@ def get_product_transactions(product_id):
     engine = get_sqlalchemy_engine()
     
     if DB_TYPE == "postgres":
-        from sqlalchemy import text
-        query = text("""
+        query = """
             SELECT * FROM transactions 
-            WHERE product_id = :product_id 
+            WHERE product_id = %s 
             ORDER BY timestamp DESC
-        """)
-        df = pd.read_sql_query(query, engine, params={"product_id": product_id})
+        """
+        df = pd.read_sql_query(query, engine, params=[product_id])
     else:  # sqlite
         query = """
             SELECT * FROM transactions 
