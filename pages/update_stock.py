@@ -71,7 +71,7 @@ def show_stock_update_tab(products_df):
             with col1:
                 transaction_type = st.selectbox(
                     "Əməliyyat Növü",
-                    ["SATIŞ", "STOKU ARTIR"],
+                    ["SALE", "RESTOCK"],
                     help="SALE: Stoku azaldır, RESTOCK: Stoku artırır"
                 )
             

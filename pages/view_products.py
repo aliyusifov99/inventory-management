@@ -13,10 +13,18 @@ def show_view_products_page():
     """Məhsulları görüntüləmə səhifəsini göstər"""
     st.header("Bütün Məhsullar")
     
-    # Anbar statistikalarını əldə et
-    stats = get_inventory_stats()
+    # Add refresh button for cache
+    col1, col2 = st.columns([6, 1])
+    with col2:
+        if st.button("🔄 Yenilə"):
+            st.cache_data.clear()
+            st.rerun()
     
-    # Xülasə kartlarını göstər
+    # Get cached inventory statistics
+    with st.spinner("Statistikalar yüklənir..."):
+        stats = get_inventory_stats()
+    
+    # Display summary cards
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -31,8 +39,10 @@ def show_view_products_page():
     with col4:
         st.metric("Ümumi Ədəd", stats['total_items'])
     
-    # Az stok xəbərdarlıqları
-    low_stock_items = get_low_stock_products()
+    # Low stock alerts (cached)
+    with st.spinner("Az stok məlumatları yoxlanır..."):
+        low_stock_items = get_low_stock_products()
+    
     if not low_stock_items.empty:
         st.warning("⚠️ Az Stok Xəbərdarlığı!")
         with st.expander("Az Stoklu Məhsulları Gör", expanded=True):
@@ -47,34 +57,35 @@ def show_view_products_page():
     
     st.subheader("Məhsullar Cədvəli")
     
-    # Axtarış funksionallığı
+    # Search functionality
     search_term = st.text_input(
         "🔍 Məhsul axtarın", 
         placeholder="Məhsul adı ilə axtarmaq üçün yazın...",
         help="Axtarış böyük-kiçik hərfə həssas deyil"
     )
     
-    # Axtarışa əsasən məhsulları əldə et
-    if search_term:
-        products_df = search_products(search_term)
-        if products_df.empty:
-            st.info(f"'{search_term}' sorğusuna uyğun məhsul tapılmadı")
-            return
-    else:
-        products_df = get_all_products()
-        if products_df.empty:
-            st.info("Heç bir məhsul tapılmadı. Başlamaq üçün bəzi məhsullar əlavə edin!")
-            if st.button("➕ İlk Məhsulunuzu Əlavə Edin"):
-                st.info("👆 'Məhsul Əlavə Et' səhifəsinə getmək üçün yan paneldən istifadə edin")
-            return
+    # Get products based on search (cached)
+    with st.spinner("Məhsullar yüklənir..."):
+        if search_term:
+            products_df = search_products(search_term)
+            if products_df.empty:
+                st.info(f"'{search_term}' sorğusuna uyğun məhsul tapılmadı")
+                return
+        else:
+            products_df = get_all_products()
+            if products_df.empty:
+                st.info("Heç bir məhsul tapılmadı. Başlamaq üçün bəzi məhsullar əlavə edin!")
+                if st.button("➕ İlk Məhsulunuzu Əlavə Edin"):
+                    st.info("👆 'Məhsul Əlavə Et' səhifəsinə getmək üçün yan paneldən istifadə edin")
+                return
     
-    # Məhsullar cədvəlini göstər
+    # Display products table
     display_df = prepare_display_dataframe(products_df)
     
-    # Məhsul sayını göstər
+    # Show products count
     st.write(f"{len(display_df)} məhsul göstərilir")
     
-    # Məlumat çərçivəsini göstər
+    # Display the dataframe
     st.dataframe(
         display_df, 
         use_container_width=True,
@@ -89,16 +100,17 @@ def show_view_products_page():
         }
     )
     
-    # Məhsul silmə bölməsi
+    # Delete product section
     show_delete_section(products_df)
 
+@st.cache_data(ttl=60)  # Cache display dataframe preparation
 def prepare_display_dataframe(products_df):
-    """Göstərmək üçün məlumat çərçivəsini hazırla"""
+    """Göstərmək üçün məlumat çərçivəsini hazırla (cached)"""
     display_df = products_df.copy()
     display_df['Qiymət'] = display_df['price'].apply(format_currency)
     display_df['Maya'] = display_df['cost'].apply(format_currency)
     
-    # Göstərmək üçün sütunları seç və yenidən adlandır
+    # Select and rename columns for display
     display_df = display_df[[
         'product_id', 'name', 'quantity', 'min_quantity', 
         'Qiymət', 'Maya', 'created_date'
@@ -118,7 +130,7 @@ def show_delete_section(products_df):
     st.subheader("🗑️ Məhsul Sil")
     
     with st.expander("Məhsul Sil", expanded=False):
-        # Məhsul seçimi
+        # Product selection
         product_options = {
             row['product_id']: f"{row['name']} (ID: {row['product_id']})"
             for _, row in products_df.iterrows()
@@ -136,7 +148,7 @@ def show_delete_section(products_df):
                 products_df['product_id'] == selected_product_id
             ].iloc[0]
             
-            # Məhsul təfərrüatlarını göstər
+            # Show product details
             st.info(f"""
             **Məhsul Məlumatları:**
             - Ad: {selected_product['name']}
@@ -144,16 +156,19 @@ def show_delete_section(products_df):
             - Qiymət: {format_currency(selected_product['price'])}
             """)
             
-            # Təsdiq
+            # Confirmation
             col1, col2 = st.columns([1, 3])
             
             with col1:
                 if st.button("🗑️ Məhsulu Sil", type="secondary"):
                     try:
-                        success = delete_product(selected_product_id)
+                        with st.spinner("Məhsul silinir..."):
+                            success = delete_product(selected_product_id)
                         if success:
                             st.success(f"✅ '{selected_product['name']}' məhsulu uğurla silindi!")
                             st.info("🔄 Yenilənmiş nəticələri görmək üçün səhifəni yeniləyin.")
+                            # Clear cache after deletion
+                            st.cache_data.clear()
                         else:
                             st.error("❌ Məhsul tapılmadı və ya silinə bilmədi")
                     except Exception as e:
