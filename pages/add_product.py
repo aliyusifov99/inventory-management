@@ -4,56 +4,56 @@ from database.operations import add_product
 from utils.validation import validate_product_data
 
 def show_add_product_page():
-    """Display the add product page"""
-    st.header("Add New Product")
+    """Yeni məhsul əlavə etmə səhifəsini göstər"""
+    st.header("Yeni Məhsul Əlavə Et")
     
     with st.form("add_product_form"):
         col1, col2 = st.columns(2)
         
         with col1:
             name = st.text_input(
-                "Product Name*", 
-                placeholder="Enter product name",
-                help="Required field"
+                "Məhsul Adı*", 
+                placeholder="Məhsul adını daxil edin",
+                help="Tələb olunan sahə"
             )
             quantity = st.number_input(
-                "Current Quantity*", 
+                "Hazırki Miqdar*", 
                 min_value=0, 
                 value=0, 
                 step=1,
-                help="Current stock quantity"
+                help="Hazırki stok miqdarı"
             )
             min_quantity = st.number_input(
-                "Minimum Quantity (Reorder Level)", 
+                "Minimum Miqdar (Yenidən Sifariş Səviyyəsi)", 
                 min_value=0, 
                 value=5, 
                 step=1,
-                help="Alert when stock drops to this level"
+                help="Stok bu səviyyəyə düşdükdə xəbərdarlıq göstər"
             )
         
         with col2:
             price = st.number_input(
-                "Selling Price*", 
+                "Satış Qiyməti*", 
                 min_value=0.0, 
                 value=0.0, 
                 step=0.01, 
                 format="%.2f",
-                help="Required field"
+                help="Tələb olunan sahə"
             )
             cost = st.number_input(
-                "Purchase Cost", 
+                "Alış Qiyməti", 
                 min_value=0.0, 
                 value=0.0, 
                 step=0.01, 
                 format="%.2f",
-                help="Optional: Cost price for profit calculation"
+                help="İstəyə bağlı: Mənfəət hesablaması üçün alış qiyməti"
             )
         
-        # Form submission
-        submitted = st.form_submit_button("Add Product", type="primary")
+        # Forma təqdimi
+        submitted = st.form_submit_button("Məhsul Əlavə Et", type="primary")
         
         if submitted:
-            # Validate input
+            # Girişi yoxla
             errors = validate_product_data(name, price, quantity, min_quantity, cost)
             
             if errors:
@@ -68,22 +68,22 @@ def show_add_product_page():
                         price, 
                         cost
                     )
-                    st.success(f"✅ Product '{name.strip()}' added successfully! (ID: {product_id})")
-                    st.info("🔄 Form has been reset. You can add another product or go to 'View Products' to see all items.")
+                    st.success(f"✅ '{name.strip()}' məhsulu uğurla əlavə edildi! (ID: {product_id})")
+                    st.info("🔄 Form sıfırlandı. Başqa məhsul əlavə edə bilərsiniz və ya bütün məhsulları görmək üçün 'Məhsulları Gör' səhifəsinə gedin.")
                 except Exception as e:
-                    st.error(f"❌ Error adding product: {str(e)}")
+                    st.error(f"❌ Məhsul əlavə edərkən xəta: {str(e)}")
     
-    # Help section
-    with st.expander("ℹ️ Help - Adding Products"):
+    # Kömək bölməsi
+    with st.expander("ℹ️ Kömək - Məhsul Əlavə Etmək"):
         st.markdown("""
-        **Required Fields (marked with *):**
-        - **Product Name**: Must be at least 2 characters long
-        - **Selling Price**: Must be greater than 0
+        **Tələb Olunan Sahələr (*):
+        - **Məhsul Adı**: Ən azı 2 simvol olmalıdır
+        - **Satış Qiyməti**: 0-dan böyük olmalıdır
         
-        **Optional Fields:**
-        - **Current Quantity**: Starting stock (default: 0)
-        - **Minimum Quantity**: Reorder alert level (default: 5)
-        - **Purchase Cost**: For profit tracking (default: 0)
+        **İstəyə Bağlı Sahələr:**
+        - **Hazırki Miqdar**: Başlanğıc stok (standart: 0)
+        - **Minimum Miqdar**: Yenidən sifariş xəbərdarlıq səviyyəsi (standart: 5)
+        - **Alış Qiyməti**: Mənfəət izləmə üçün (standart: 0)
         """)
 
 if __name__ == "__main__":

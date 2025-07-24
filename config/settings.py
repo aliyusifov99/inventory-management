@@ -21,11 +21,17 @@ DB_TYPE = os.getenv("DB_TYPE", "sqlite").lower()
 DB_NAME = "inventory.db"
 DB_PATH = DATA_DIR / DB_NAME
 
-# Google Sheets settings
-GOOGLE_SHEETS_URL = os.getenv("GOOGLE_SHEETS_URL")
+# Supabase PostgreSQL settings
+SUPABASE_CONFIG = {
+    "host": os.getenv("SUPABASE_HOST"),
+    "port": int(os.getenv("SUPABASE_PORT", "5432")),
+    "database": os.getenv("SUPABASE_DATABASE", "postgres"),
+    "user": os.getenv("SUPABASE_USER", "postgres"),
+    "password": os.getenv("SUPABASE_PASSWORD"),
+}
 
 # App settings
-APP_TITLE = "Inventory Management System"
+APP_TITLE = "Anbar İdarəetmə Sistemi"
 APP_ICON = "📦"
 PAGE_LAYOUT = "wide"
 
@@ -34,10 +40,12 @@ if DB_TYPE == "sqlite":
     DATA_DIR.mkdir(exist_ok=True)
     BACKUP_DIR.mkdir(exist_ok=True)
 
-# Validate Google Sheets configuration
-if DB_TYPE == "sheets":
-    if not GOOGLE_SHEETS_URL:
-        raise ValueError("Missing GOOGLE_SHEETS_URL environment variable")
+# Validate Supabase configuration when using PostgreSQL
+if DB_TYPE == "postgres":
+    required_vars = ["SUPABASE_HOST", "SUPABASE_PASSWORD"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise ValueError(f"Missing required Supabase environment variables: {', '.join(missing_vars)}")
 
 # Check if running on Streamlit Cloud
 IS_CLOUD_DEPLOYMENT = (
@@ -48,5 +56,5 @@ IS_CLOUD_DEPLOYMENT = (
 
 print(f"🔧 Environment: {'☁️ Streamlit Cloud' if IS_CLOUD_DEPLOYMENT else '💻 Local'}")
 print(f"🗄️ Database: {DB_TYPE.upper()}")
-if DB_TYPE == "sheets":
-    print(f"📊 Google Sheets: {GOOGLE_SHEETS_URL[:50]}...")
+if DB_TYPE == "postgres":
+    print(f"🐘 Supabase Host: {SUPABASE_CONFIG['host']}")
