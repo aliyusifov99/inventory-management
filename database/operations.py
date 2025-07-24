@@ -74,13 +74,11 @@ def search_products(search_term):
     engine = get_sqlalchemy_engine()
     
     if DB_TYPE == "postgres":
-        # Use text() for raw SQL with named parameters
-        from sqlalchemy import text
-        query = text("SELECT * FROM products WHERE name ILIKE :search_term ORDER BY name")
-        df = pd.read_sql_query(query, engine, params={"search_term": f"%{search_term}%"})
+        query = "SELECT * FROM products WHERE name ILIKE %s ORDER BY name"
+        df = pd.read_sql_query(query, engine, params=(f"%{search_term}%",))
     else:  # sqlite
         query = "SELECT * FROM products WHERE name LIKE ? ORDER BY name"
-        df = pd.read_sql_query(query, engine, params=[f"%{search_term}%"])
+        df = pd.read_sql_query(query, engine, params=(f"%{search_term}%",))
     
     return df
 
@@ -193,14 +191,14 @@ def get_product_transactions(product_id):
             WHERE product_id = %s 
             ORDER BY timestamp DESC
         """
-        df = pd.read_sql_query(query, engine, params=[product_id])
+        df = pd.read_sql_query(query, engine, params=(product_id,))
     else:  # sqlite
         query = """
             SELECT * FROM transactions 
             WHERE product_id = ? 
             ORDER BY timestamp DESC
         """
-        df = pd.read_sql_query(query, engine, params=[product_id])
+        df = pd.read_sql_query(query, engine, params=(product_id,))
     
     return df
 
